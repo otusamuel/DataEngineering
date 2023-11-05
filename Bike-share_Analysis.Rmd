@@ -1,0 +1,204 @@
+---
+title: "Bike-share Analysis"
+author: "Sam Otu"
+date: "2023-11-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## *Project Summary*
+
+In this project, I demonstrate essential data analysis skills by efficiently *organizing, cleaning, transforming, analyzing,* and *visualizing* bike ride data for a fictional bike share company, **Ridez**. This endeavor aims to provide actionable insights, enabling data-driven decision-making to optimize revenue and improve business strategies at Ridez.
+
+The project tries to answer the question, 'How different are annual members from casual riders at Ridez?' This question focuses on understanding the differences between two important customer groups: annual members and casual riders. By analyzing and comparing these groups, I provide valuable insights that Ridez can use to make data-driven decisions and potentially tailor their services or marketing strategies to better serve each group.
+
+## *Data source*
+
+I used [bike-ride data for 2022](https://divvy-tripdata.s3.amazonaws.com/index.html) made available by Motivate International Inc. under this [licence](https://divvybikes.com/data-license-agreement)
+
+## Ridez 2022 Bike-ride Data Analysis
+
+I begin by loading the needed libraries:
+
+```{r load libraries, warning=FALSE}
+library(tidyverse)
+library(skimr)
+library(janitor)
+```
+
+### Downloading/organizing files
+
+At the time of doing this, data for 2022 was accessible in the form of individual zip files for each month, totaling 12 zip files. The subsequent code facilitates the download and extraction of these files.
+
+```{r Downloading/Unzipping files, eval=FALSE}
+#declaring variables
+cnt <- sprintf("%02d", 1:12)
+urls <- list()
+dest_dir <- "C:/Users/otusa/Desktop/Data Analyst/Capstone Project/Dowloads"
+unzip_dir <- "C:/Users/otusa/Desktop/Data Analyst/Capstone Project/CSV"
+
+#setting up download links for 12 files
+for (x in 1:12) {
+  link <- "https://divvy-tripdata.s3.amazonaws.com/2022" %>% 
+  paste(cnt[x], sep = "") %>% 
+  paste("-divvy-tripdata.zip", sep = "")
+  urls <- c(urls, link)
+}
+
+#Download zip files
+for (url in urls) {
+  filename <- basename(url)  # Extract the filename from the URL
+  dest_file <- file.path(dest_dir, filename)  # Define the destination file path
+  download.file(url, dest_file, mode = "wb")
+}
+
+#Unzip files
+zip_files <- list.files(dest_dir, pattern = ".zip", full.names = TRUE) #list downloaded zip files
+for (file in zip_files) {
+  unzip(file, exdir = unzip_dir) #unzip csv files into working directory
+}
+
+```
+
+```{r Set Working Directory}
+setwd("C:/Users/otusa/Desktop/Data Analyst/Capstone Project/CSV")
+trips_csv <- list.files() # list of csv file names
+dfs <- list()   #list of dataframes from each csv(month)
+
+#Load CSVs into data frames df1:df12
+for (cnt in 1:12) {
+  dfs[cnt]  <- paste("df", cnt, sep = "")
+  df <- read_csv(trips_csv[cnt])
+  dfs[[cnt]] <- df
+}
+```
+
+### Checking for Consistency in Column names
+
+```{r Checking Consistency }
+janitor::compare_df_cols(dfs, return = "mismatch")
+  
+```
+
+### Organizing datasets into one dataframe
+
+```{r Combine Dataframes}
+df_all <- dfs[[1]]  # Initialize with the first data frame
+
+for (cnt in 2:length(dfs)) {
+  df_all <- rbind(df_all, dfs[[cnt]])
+}
+head(df_all)
+```
+
+### Explore data
+
+```{r Explore Data}
+skim_without_charts(df_all)
+```
+
+### Clean/Prep data for Analysis
+
+The following code filters the data by selecting relevant columns and creating new ones for the analysis
+
+```{r Filter/Create New Columns}
+df_new <- select(df_all, "rideable_type", "member_casual")
+df_new$date <- as.Date(df_all$started_at) #Format date as yyyy-mm-dd
+df_new$month <- format(df_new$date, "%b") #Add column for month
+df_new$day <- format(df_new$date, "%a") #Add column for Day of week
+df_new$ride_len <- difftime(df_all$ended_at, df_all$started_at, units= "mins") #Add column for ride length
+
+```
+
+Check data after transformation
+
+```{r Checking Data}
+skim_without_charts(df_new)
+```
+
+Checking data revealed rows with ride duration \<= 0.The following code removes these rows and stores the resulting data in a new dataframe *df_clean* for the purposes of my analysis.
+
+```{r Cleaning Data}
+irrel_rows <- sum(df_new$ride_len<= 0)
+paste(irrel_rows, "rows have ride_len <= 0" )
+df_clean <- df_new[(df_new$ride_len > 0),]
+df_clean$ride_len <- as.numeric(df_clean$ride_len) #Convert ride_len to numeric
+```
+
+##Summary Statistics The following code provides group, monthly and daily summary statistics: minimum, maximum, mean ride durations, and number of rides.
+
+```{r Summary Stats by Group}
+summarise(df_clean, number = n(),
+           avg_ride_len = mean(ride_len),
+           min_ride_len = min(ride_len), 
+           max_ride_len = max(ride_len),
+         total_ride_len = sum(ride_len),
+           .by = member_casual)
+```
+
+```{r Summary Stats by Month}
+df_clean %>% summarise( number = n(),
+           avg_ride_len = mean(ride_len),
+           min_ride_len = min(ride_len), 
+           max_ride_len = max(ride_len),
+         total_ride_len = sum(ride_len),
+           .by = month) %>% 
+arrange(desc(total_ride_len))
+```
+
+```{r Summary Stats by Day}
+df_clean %>% summarise( number = n(),
+           avg_ride_len = mean(ride_len),
+           min_ride_len = min(ride_len), 
+           max_ride_len = max(ride_len),
+         total_ride_len = sum(ride_len),
+           .by = day) %>% 
+arrange(desc(total_ride_len))
+```
+
+### Data Visualization
+
+I used bar charts to show the daily and seasonal variations in patronage, while highlighting the differences between the two groups.
+
+```{r Daily means Bar chart}
+df_clean %>% 
+  group_by(member_casual,day) %>% 
+  summarise(num_rides = n(), avg_ride_len = mean(ride_len)) %>% 
+  ggplot(aes(x=reorder(day, -avg_ride_len), y=avg_ride_len, fill=member_casual))+geom_col()+
+  geom_text(aes(label = round(avg_ride_len, 0), group = member_casual), position = position_stack(vjust = 0.5))+
+  labs(x="Day", y="Mean duration (min)", title = "Daily Ride Averages")+ theme_minimal()
+```
+
+```{r Monthly means Bar chart}
+df_clean %>% 
+  group_by(member_casual, month) %>% 
+  summarise(num_rides = n(), avg_ride_len = mean(ride_len)) %>% 
+  ggplot(aes(x=reorder(month, -avg_ride_len), y=avg_ride_len, fill=member_casual))+geom_col()+
+  geom_text(aes(label = round(avg_ride_len, 0), group = member_casual), position = position_stack(vjust = 0.5))+
+  labs(x="Month", y="Mean duration (min)", title = "Monthly Ride Averages")+ theme_minimal()
+```
+
+I aslo added some line charts to highlight how patronage increase on the weekends and in summer
+
+```{r Daily means linechart}
+day_ord<-c("Sun","Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+df_clean %>% 
+  group_by(member_casual,day) %>% 
+  summarise(avg_len = mean(ride_len)) %>% 
+  ggplot(aes(x=factor(day, day_ord), y= avg_len, group= member_casual, color= member_casual))+
+  geom_line(linewidth=1, lineend= "round")+ 
+  labs(x="Day", y="Mean duration (min)", title = "Daily Patronage")+ theme_minimal()
+```
+
+```{r}
+month_ord<- unique(df_clean$month)
+df_clean %>% 
+  group_by(member_casual,month) %>% 
+  summarise(avg_len = mean(ride_len)) %>% 
+  ggplot(aes(x= factor(month, month_ord), y= avg_len, group= member_casual, color= member_casual))+
+  geom_line(linewidth=1, lineend= "round")+ 
+  labs(x="Month", y="Mean duration (min)", title = "Seasonal Patronage")+ theme_minimal()
+```
