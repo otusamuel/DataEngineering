@@ -63,7 +63,7 @@ for (file in zip_files) {
 
 ```
 
-```{r Set Working Directory}
+```{r Set Working Directory, warning=FALSE}
 setwd("C:/Users/otusa/Desktop/Data Analyst/Capstone Project/CSV")
 trips_csv <- list.files() # list of csv file names
 dfs <- list()   #list of dataframes from each csv(month)
@@ -85,7 +85,7 @@ janitor::compare_df_cols(dfs, return = "mismatch")
 
 ### Organizing datasets into one dataframe
 
-```{r Combine Dataframes}
+```{r Combine Dataframes, eval=FALSE}
 df_all <- dfs[[1]]  # Initialize with the first data frame
 
 for (cnt in 2:length(dfs)) {
@@ -202,3 +202,5 @@ df_clean %>%
   geom_line(linewidth=1, lineend= "round")+ 
   labs(x="Month", y="Mean duration (min)", title = "Seasonal Patronage")+ theme_minimal()
 ```
+
+A Tableau dashboard summarizing these analyses can be found [here](https://public.tableau.com/views/Ridez_2022_analysis/Dashboard1?:language=en-US&:display_count=n&:origin=viz_share_link)
