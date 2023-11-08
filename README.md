@@ -7,3 +7,5 @@ The project tries to answer the question, ‘How different are annual members fr
 This question focuses on understanding the differences between two important customer groups: annual members and casual riders. 
 By analyzing and comparing these groups, I provide valuable insights that Ridez can use to make data-driven decisions and 
 potentially tailor their services or marketing strategies to better serve each group.
+
+The Tableau dashboard for this anaylsis is hosted at https://public.tableau.com/views/Ridez_2022_analysis/Dashboard1?:language=en-US&:display_count=n&:origin=viz_share_link 
