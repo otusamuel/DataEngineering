@@ -1,8 +1,3 @@
-# Table of Contents
-### Bike-share_Analysis.Rmd
-In this project, I demonstrate essential data analysis skills by efficiently organizing, cleaning, transforming, analyzing, and visualizing bike ride data for a fictional bike share company, Ridez using R programming. The analysis focuses on understanding the differences between two important customer groups: annual members and casual riders. By analyzing and comparing these groups, I provide valuable insights that Ridez can use to make data-driven decisions and potentially tailor their services or marketing strategies to better serve each group.
-The Tableau dashboard for this anaylsis is hosted at https://public.tableau.com/views/Ridez_2022_analysis/Dashboard1?:language=en-US&:display_count=n&:origin=viz_share_link 
-
 ### sales.sql
 In this project, I designed and implemented a relational database schema for sales data analysis. I created a sales fact table and associated dimension tables (products and stores). I inserted dummy data into the tables and explored the data to gain insights. I performed simple queries to retrieve product and store information, and more complex queries using joins, groupings, and aggregations to analyze sales revenue by product category and store location. Additionally, I created views for commonly used queries to streamline future analysis tasks.
 
